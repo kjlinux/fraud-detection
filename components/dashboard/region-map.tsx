@@ -40,7 +40,7 @@ const regionCoordinates: Record<string, { x: number; y: number }> = {
 }
 
 const riskLevelConfig = {
-  low: { color: 'bg-success', textColor: 'text-success', label: 'Faible', hex: 'oklch(0.70 0.18 165)' },
+  low: { color: 'bg-success', textColor: 'text-success', label: 'Faible', hex: 'oklch(0.55 0.18 250)' },
   medium: { color: 'bg-warning', textColor: 'text-warning', label: 'Moyen', hex: 'oklch(0.80 0.16 85)' },
   high: { color: 'bg-danger', textColor: 'text-danger', label: 'Élevé', hex: 'oklch(0.60 0.22 25)' }
 }
@@ -107,7 +107,7 @@ export function RegionMap({ regionStats }: RegionMapProps) {
                             y1={from.y}
                             x2={to.x}
                             y2={to.y}
-                            stroke="oklch(0.70 0.18 165)"
+                            stroke="oklch(0.55 0.18 250)"
                             strokeWidth="0.3"
                             strokeDasharray="2 2"
                             opacity="0.3"

@@ -22,14 +22,14 @@ interface AnalyticsChartsProps {
 }
 
 const COLORS = {
-  primary: 'oklch(0.70 0.18 165)',
+  primary: 'oklch(0.55 0.18 250)',
   info: 'oklch(0.65 0.15 220)',
   warning: 'oklch(0.80 0.16 85)',
   danger: 'oklch(0.60 0.22 25)',
-  success: 'oklch(0.70 0.18 165)'
+  success: 'oklch(0.55 0.18 250)'
 }
 
-const PIE_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16']
+const PIE_COLORS = ['#1e3a5f', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16']
 
 export function AnalyticsCharts({ timeSeriesData, regionStats }: AnalyticsChartsProps) {
   const [activeTab, setActiveTab] = useState('timeline')

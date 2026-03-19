@@ -30,7 +30,16 @@ export function useFraudDetection() {
   })
   const [regionStats, setRegionStats] = useState<RegionStats[]>([])
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([])
-  const [mlMetrics, setMlMetrics] = useState<MLModelMetrics>(generateMLMetrics())
+  const [mlMetrics, setMlMetrics] = useState<MLModelMetrics>({
+    accuracy: 0,
+    precision: 0,
+    recall: 0,
+    f1Score: 0,
+    lastUpdated: new Date(0),
+    totalPredictions: 0,
+    truePositives: 0,
+    falsePositives: 0
+  })
   const [isSimulationRunning, setIsSimulationRunning] = useState(true)
   const [simulationSpeed, setSimulationSpeed] = useState(2000)
   
@@ -54,6 +63,7 @@ export function useFraudDetection() {
     setStats(calculateStats(initialTransactions))
     setRegionStats(calculateRegionStats(initialTransactions))
     setTimeSeriesData(generateTimeSeriesData(initialTransactions))
+    setMlMetrics(generateMLMetrics())
   }, [])
   
   // Handle new transaction
