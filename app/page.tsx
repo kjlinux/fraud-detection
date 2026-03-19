@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { TransactionTable } from '@/components/dashboard/transaction-table'
@@ -12,6 +13,20 @@ import { LiveFeed } from '@/components/dashboard/live-feed'
 import { useFraudDetection } from '@/hooks/use-fraud-detection'
 
 export default function FraudDetectionDashboard() {
+  const [currentTime, setCurrentTime] = useState<string>('')
+  
+  useEffect(() => {
+    // Set initial time on client only to avoid hydration mismatch
+    setCurrentTime(new Date().toLocaleTimeString('fr-FR'))
+    
+    // Update time every second
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('fr-FR'))
+    }, 1000)
+    
+    return () => clearInterval(interval)
+  }, [])
+  
   const {
     transactions,
     alerts,
@@ -48,7 +63,7 @@ export default function FraudDetectionDashboard() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Dernière mise à jour:</span>
-              <span className="font-mono">{new Date().toLocaleTimeString('fr-FR')}</span>
+              <span className="font-mono">{currentTime || '--:--:--'}</span>
             </div>
           </div>
 
