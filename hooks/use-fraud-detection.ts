@@ -44,6 +44,8 @@ export function useFraudDetection() {
   const [simulationSpeed, setSimulationSpeed] = useState(2000)
   
   const simulatorRef = useRef<TransactionSimulator | null>(null)
+  const statsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const transactionsRef = useRef<Transaction[]>([])
   
   // Initialize with batch of transactions
   useEffect(() => {
@@ -58,6 +60,7 @@ export function useFraudDetection() {
       .filter((a): a is Alert => a !== null)
       .slice(0, 10)
     
+    transactionsRef.current = initialTransactions
     setTransactions(initialTransactions)
     setAlerts(initialAlerts)
     setStats(calculateStats(initialTransactions))
@@ -68,15 +71,16 @@ export function useFraudDetection() {
   
   // Handle new transaction
   const handleNewTransaction = useCallback((transaction: Transaction) => {
-    setTransactions(prev => {
-      const updated = [transaction, ...prev].slice(0, MAX_TRANSACTIONS)
-      
-      // Update stats
-      setStats(calculateStats(updated))
-      setRegionStats(calculateRegionStats(updated))
-      
-      return updated
-    })
+    const updated = [transaction, ...transactionsRef.current].slice(0, MAX_TRANSACTIONS)
+    transactionsRef.current = updated
+    setTransactions(updated)
+
+    // Debounce heavy stats recalculation to avoid lag on rapid transactions
+    if (statsDebounceRef.current) clearTimeout(statsDebounceRef.current)
+    statsDebounceRef.current = setTimeout(() => {
+      setStats(calculateStats(transactionsRef.current))
+      setRegionStats(calculateRegionStats(transactionsRef.current))
+    }, 500)
     
     // Generate alert if needed
     const alert = generateAlert(transaction)

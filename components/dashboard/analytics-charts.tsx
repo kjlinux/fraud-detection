@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -29,9 +29,9 @@ const COLORS = {
   success: 'oklch(0.55 0.18 250)'
 }
 
-const PIE_COLORS = ['#1e3a5f', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16']
+const PIE_COLORS = ['#1e3a5f', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe']
 
-export function AnalyticsCharts({ timeSeriesData, regionStats }: AnalyticsChartsProps) {
+function AnalyticsChartsComponent({ timeSeriesData, regionStats }: AnalyticsChartsProps) {
   const [activeTab, setActiveTab] = useState('timeline')
   const [fullscreenChart, setFullscreenChart] = useState<string | null>(null)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
@@ -348,3 +348,5 @@ export function AnalyticsCharts({ timeSeriesData, regionStats }: AnalyticsCharts
     </>
   )
 }
+
+export const AnalyticsCharts = memo(AnalyticsChartsComponent)

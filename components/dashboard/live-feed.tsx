@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { Radio, ArrowRight, Eye, Pause, Play } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -33,13 +33,12 @@ const statusConfig = {
   blocked: { label: 'Bloqué', className: 'bg-danger/20 text-danger' }
 }
 
-export function LiveFeed({ transactions }: LiveFeedProps) {
+function LiveFeedComponent({ transactions }: LiveFeedProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
-  
-  const recentTransactions = isPaused 
-    ? transactions.slice(0, 15)
-    : transactions.slice(0, 15)
+  const [frozenTransactions, setFrozenTransactions] = useState<Transaction[]>([])
+
+  const recentTransactions = isPaused ? frozenTransactions : transactions
 
   return (
     <TooltipProvider>
@@ -64,7 +63,10 @@ export function LiveFeed({ transactions }: LiveFeedProps) {
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={() => setIsPaused(!isPaused)}
+                  onClick={() => {
+                  if (!isPaused) setFrozenTransactions(transactions)
+                  setIsPaused(!isPaused)
+                }}
                 >
                   {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                 </Button>
@@ -170,3 +172,5 @@ export function LiveFeed({ transactions }: LiveFeedProps) {
     </TooltipProvider>
   )
 }
+
+export const LiveFeed = memo(LiveFeedComponent)

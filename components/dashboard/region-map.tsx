@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { MapPin, TrendingUp, AlertTriangle, X, ExternalLink, Eye } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +24,7 @@ import { formatCurrency } from '@/lib/fraud-simulation'
 
 interface RegionMapProps {
   regionStats: RegionStats[]
+  onFilterRegion?: (region: string) => void
 }
 
 const regionCoordinates: Record<string, { x: number; y: number }> = {
@@ -45,7 +46,7 @@ const riskLevelConfig = {
   high: { color: 'bg-danger', textColor: 'text-danger', label: 'Élevé', hex: 'oklch(0.60 0.22 25)' }
 }
 
-export function RegionMap({ regionStats }: RegionMapProps) {
+function RegionMapComponent({ regionStats, onFilterRegion }: RegionMapProps) {
   const [selectedRegion, setSelectedRegion] = useState<RegionStats | null>(null)
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null)
   
@@ -260,7 +261,16 @@ export function RegionMap({ regionStats }: RegionMapProps) {
                       </p>
                     </div>
                     
-                    <Button variant="outline" size="sm" className="mt-4 w-full gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 w-full gap-2"
+                      onClick={() => {
+                        onFilterRegion?.(selectedRegion.region)
+                        setSelectedRegion(null)
+                        document.querySelector('[data-transaction-table]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }}
+                    >
                       <ExternalLink className="h-4 w-4" />
                       Voir les transactions de {selectedRegion.region}
                     </Button>
@@ -332,3 +342,5 @@ export function RegionMap({ regionStats }: RegionMapProps) {
     </TooltipProvider>
   )
 }
+
+export const RegionMap = memo(RegionMapComponent)

@@ -1,19 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { TransactionTable } from '@/components/dashboard/transaction-table'
 import { AlertsPanel } from '@/components/dashboard/alerts-panel'
-import { MLMetricsCard } from '@/components/dashboard/ml-metrics'
 import { AnalyticsCharts } from '@/components/dashboard/analytics-charts'
 import { RegionMap } from '@/components/dashboard/region-map'
-import { ControlPanel } from '@/components/dashboard/control-panel'
 import { LiveFeed } from '@/components/dashboard/live-feed'
 import { useFraudDetection } from '@/hooks/use-fraud-detection'
 
 export default function FraudDetectionDashboard() {
   const [currentTime, setCurrentTime] = useState<string>('')
+  const [regionFilter, setRegionFilter] = useState<string | null>(null)
   
   useEffect(() => {
     // Set initial time on client only to avoid hydration mismatch
@@ -33,14 +32,11 @@ export default function FraudDetectionDashboard() {
     stats,
     regionStats,
     timeSeriesData,
-    mlMetrics,
     isSimulationRunning,
-    simulationSpeed,
     acknowledgeAlert,
-    toggleSimulation,
-    changeSimulationSpeed,
-    generateTestTransaction
   } = useFraudDetection()
+
+  const clearRegionFilter = useCallback(() => setRegionFilter(null), [])
 
   const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged)
 
@@ -74,7 +70,7 @@ export default function FraudDetectionDashboard() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Left Column - Transaction Table */}
             <div className="lg:col-span-2">
-              <TransactionTable transactions={transactions} />
+              <TransactionTable transactions={transactions} regionFilter={regionFilter} onClearRegionFilter={clearRegionFilter} />
             </div>
             
             {/* Right Column - Alerts */}
@@ -89,20 +85,12 @@ export default function FraudDetectionDashboard() {
               timeSeriesData={timeSeriesData} 
               regionStats={regionStats} 
             />
-            <RegionMap regionStats={regionStats} />
+            <RegionMap regionStats={regionStats} onFilterRegion={setRegionFilter} />
           </div>
 
           {/* Bottom Section */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <MLMetricsCard metrics={mlMetrics} />
-            <LiveFeed transactions={transactions} />
-            <ControlPanel
-              isSimulationRunning={isSimulationRunning}
-              simulationSpeed={simulationSpeed}
-              onToggleSimulation={toggleSimulation}
-              onChangeSpeed={changeSimulationSpeed}
-              onGenerateTransaction={generateTestTransaction}
-            />
+          <div className="grid gap-6 md:grid-cols-1">
+            <LiveFeed transactions={transactions.slice(0, 15)} />
           </div>
 
           {/* Footer */}

@@ -53,6 +53,8 @@ import { formatCurrency } from '@/lib/fraud-simulation'
 
 interface TransactionTableProps {
   transactions: Transaction[]
+  regionFilter?: string | null
+  onClearRegionFilter?: () => void
 }
 
 const channelIcons = {
@@ -92,6 +94,156 @@ const typeLabels = {
   deposit: 'Dépôt',
   payment: 'Paiement',
   mobile_money: 'Mobile Money'
+}
+
+function exportTransactionPDF(transaction: Transaction) {
+  const statusLabel = statusConfig[transaction.status].label
+  const typeLabel = typeLabels[transaction.type]
+  const fraudLabel = transaction.mlPrediction.isFraud ? 'Suspect' : 'Légitime'
+  const senderType = transaction.sender.accountType === 'individual' ? 'Particulier' : 'Entreprise'
+  const recipientType = transaction.recipient.accountType === 'individual' ? 'Particulier' : 'Entreprise'
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Transaction ${transaction.id}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 32px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid #1e3a5f; padding-bottom: 16px; }
+    .logo { font-size: 20px; font-weight: 700; color: #1e3a5f; }
+    .logo-sub { font-size: 11px; color: #666; margin-top: 2px; }
+    .title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 11px; color: #555; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1e3a5f; letter-spacing: 0.05em; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
+    .label { font-size: 10px; color: #6b7280; margin-bottom: 2px; }
+    .value { font-size: 12px; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .badge-fraud { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-legit { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+    .badge-status { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+    .factors { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .factor { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; padding: 2px 6px; font-size: 10px; }
+    .progress-bar { height: 6px; background: #e5e7eb; border-radius: 3px; margin-top: 4px; }
+    .progress-fill { height: 100%; background: #1e3a5f; border-radius: 3px; }
+    .footer { margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 12px; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+    .amount { font-size: 22px; font-weight: 700; color: #1e3a5f; }
+    @media print { body { padding: 16px; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="logo">SecurePay CI</div>
+      <div class="logo-sub">Système de Détection de Fraude</div>
+    </div>
+    <div style="text-align:right">
+      <div class="title">Rapport de Transaction</div>
+      <div class="subtitle">${transaction.id}</div>
+      <div class="subtitle">${transaction.timestamp.toLocaleString('fr-FR')}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div>
+        <div class="label">Type</div>
+        <div class="value">${typeLabel}</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="amount">${transaction.amount.toLocaleString('fr-FR')} XOF</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="label">Statut</div>
+        <span class="badge badge-status">${statusLabel}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Parties Impliquées</div>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Expéditeur</div>
+        <div class="value">${transaction.sender.name}</div>
+        <div style="font-size:10px; color:#6b7280; font-family:monospace; margin-top:2px;">${transaction.sender.id}</div>
+        <div style="font-size:11px; margin-top:4px;">${transaction.sender.region} · ${senderType}</div>
+      </div>
+      <div class="box">
+        <div class="label">Bénéficiaire</div>
+        <div class="value">${transaction.recipient.name}</div>
+        <div style="font-size:10px; color:#6b7280; font-family:monospace; margin-top:2px;">${transaction.recipient.id}</div>
+        <div style="font-size:11px; margin-top:4px;">${transaction.recipient.region} · ${recipientType}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Analyse ML & Risque</div>
+    <div class="box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span>Prédiction de fraude :</span>
+        <span class="badge ${transaction.mlPrediction.isFraud ? 'badge-fraud' : 'badge-legit'}">${fraudLabel}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span>Score de risque :</span>
+        <strong>${transaction.riskScore.toFixed(0)}%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${transaction.riskScore}%"></div></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; margin-bottom:4px;">
+        <span>Confiance ML :</span>
+        <strong>${(transaction.mlPrediction.confidence * 100).toFixed(1)}%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${transaction.mlPrediction.confidence * 100}%"></div></div>
+      <div style="margin-top:10px;">
+        <div class="label">Facteurs de risque détectés</div>
+        <div class="factors">
+          ${transaction.mlPrediction.factors.map(f => `<span class="factor">${f}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Métadonnées Techniques</div>
+    <div class="grid">
+      <div class="box">
+        <div class="label">Canal</div>
+        <div class="value">${transaction.metadata.channel}</div>
+      </div>
+      <div class="box">
+        <div class="label">Identifiant appareil</div>
+        <div class="value" style="font-size:10px; font-family:monospace;">${transaction.metadata.deviceId}</div>
+      </div>
+      <div class="box">
+        <div class="label">Adresse IP</div>
+        <div class="value" style="font-family:monospace;">${transaction.metadata.ipAddress}</div>
+      </div>
+      <div class="box">
+        <div class="label">User Agent</div>
+        <div class="value" style="font-size:9px; word-break:break-all;">${transaction.metadata.userAgent}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>SecurePay CI · Système de Détection de Fraude · Conforme BCEAO</span>
+    <span>Généré le ${new Date().toLocaleString('fr-FR')}</span>
+  </div>
+
+  <script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank', 'width=900,height=700')
+  if (win) {
+    win.document.write(html)
+    win.document.close()
+  }
 }
 
 function TransactionDetails({ transaction }: { transaction: Transaction }) {
@@ -172,7 +324,7 @@ function TransactionDetails({ transaction }: { transaction: Transaction }) {
   )
 }
 
-export function TransactionTable({ transactions }: TransactionTableProps) {
+export function TransactionTable({ transactions, regionFilter, onClearRegionFilter }: TransactionTableProps) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [sortBy, setSortBy] = useState<'timestamp' | 'amount' | 'riskScore'>('timestamp')
   const [searchQuery, setSearchQuery] = useState('')
@@ -181,6 +333,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
   
   const filteredTransactions = transactions.filter(t => {
     if (!statusFilter.has(t.status)) return false
+    if (regionFilter && t.sender.region !== regionFilter && t.recipient.region !== regionFilter) return false
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
@@ -227,12 +380,20 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
 
   return (
     <TooltipProvider>
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card" data-transaction-table>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-lg font-semibold">Transactions Récentes</CardTitle>
               <div className="flex items-center gap-2">
+                {regionFilter && (
+                  <Badge
+                    className="gap-1 cursor-pointer bg-primary/20 text-primary border-primary/30 hover:bg-primary/30"
+                    onClick={onClearRegionFilter}
+                  >
+                    {regionFilter} ×
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-xs">
                   {sortedTransactions.length} résultats
                 </Badge>
@@ -455,9 +616,12 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
             <Button variant="outline" onClick={() => setSelectedTransaction(null)} className="w-full sm:w-auto">
               Fermer
             </Button>
-            <Button className="w-full sm:w-auto gap-2">
+            <Button
+              className="w-full sm:w-auto gap-2"
+              onClick={() => selectedTransaction && exportTransactionPDF(selectedTransaction)}
+            >
               <Download className="h-4 w-4" />
-              Exporter
+              Exporter PDF
             </Button>
           </DialogFooter>
         </DialogContent>
